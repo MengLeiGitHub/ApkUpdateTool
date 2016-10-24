@@ -10,6 +10,8 @@
  gradle 接入方式
  ```java
     compile(group: 'com.ml.apkupadte', name: 'appupdate', version: '1.0.3', ext: 'aar', classifier: '')
+    compile 'com.ml.asynchttp:asynchttp:1.0.3'
+
  
  ```
 
