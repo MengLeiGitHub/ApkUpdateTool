@@ -1,5 +1,6 @@
 package com.uyin.apkupdate.utils;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Environment;
@@ -138,5 +139,18 @@ public final class StorageUtils {
         int perm = context.checkCallingOrSelfPermission(EXTERNAL_STORAGE_PERMISSION);
         return perm == PackageManager.PERMISSION_GRANTED;
     }
+    public static   String  getStoragePath(Application application){
+        String path= StorageUtils.getCacheDirectory(application).toString();
+        File fileDir=new File(path);
+        if(!fileDir.exists()){
+            try {
+                fileDir.mkdirs();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
 
+        }
+        return path;
+
+    }
 }

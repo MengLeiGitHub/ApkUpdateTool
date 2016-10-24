@@ -21,6 +21,7 @@ import android.text.TextUtils;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import com.uyin.apkupdate.ApkDown;
 import com.uyin.apkupdate.R;
 import com.uyin.apkupdate.bean.ProGreBean;
 import com.uyin.apkupdate.listener.NoticeListener;
@@ -28,33 +29,9 @@ import com.uyin.apkupdate.utils.StorageUtils;
 
 
 public class UpdateVersionService extends Service implements Runnable {
-	NoticeListener  noticeListener;
-	String path;
+ 	String path;
 	private String downLoadUrl;
-	public static final int FLAG_PROGRESS = 0, FLAG_FINISHED = 1,FLAG_START=2;
-	private Handler handler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-			case FLAG_PROGRESS:
-				noticeListener.progress(msg.arg1);
-				ProGreBean proGreBean= (ProGreBean) msg.obj;
-				noticeListener.currentDown(proGreBean.getCurrent(),proGreBean.getTotal());
-				break;
-			case FLAG_FINISHED:
- 				 openFile(new File(path));
-				break;
-			case FLAG_START:
-				if(noticeListener!=null){
-					noticeListener.start();
-				}
-				break;
-			default:
-				break;
-			}
-		}
 
-	};
 
 	@Override
 	public void onStart(Intent intent, int startId) {
@@ -66,7 +43,6 @@ public class UpdateVersionService extends Service implements Runnable {
 				Looper.loop();
 				return;
 			}
-			noticeListener= (NoticeListener) intent.getExtras().getSerializable("noticeListener");
 			path=intent.getExtras().getString("filepath");
 
 			new Thread(this).start();
@@ -90,8 +66,9 @@ public class UpdateVersionService extends Service implements Runnable {
 	@Override
 	public void run() {
 		try {
-			handler.sendEmptyMessage(FLAG_START);
+		//	handler.sendEmptyMessage(FLAG_START);
 
+			sendBroadcast(new Intent().setAction(ApkDown.Action_START));
 
 			URL url = new URL(downLoadUrl);
  			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -112,12 +89,12 @@ public class UpdateVersionService extends Service implements Runnable {
 				downLoadSize += currentSize;
 				long currentUpdateTime = System.currentTimeMillis();
 				if (currentUpdateTime - lastUpdateTime > 100) {
-					Message msg = new Message();
-					msg.what = FLAG_PROGRESS;
-					msg.arg1 = (int) (downLoadSize*100f/length);
-					msg.obj=new ProGreBean(downLoadSize,length);
-					handler.sendMessage(msg);
-					lastUpdateTime = currentUpdateTime;
+					Intent  intent=new Intent();
+					intent.setAction(ApkDown.Action_CURRENTDOWN);
+					intent.putExtra("current", downLoadSize);
+					intent.putExtra("total",length);
+  					sendBroadcast(intent);
+ 					lastUpdateTime = currentUpdateTime;
 				}
 				outputStream.write(buffer, 0, currentSize);
 			}
@@ -126,7 +103,10 @@ public class UpdateVersionService extends Service implements Runnable {
 			inputStream.close();
 			outputStream.close();
 			conn.disconnect();
-			handler.sendEmptyMessage(FLAG_FINISHED);
+			openFile(file);
+
+
+			sendBroadcast(new Intent().setAction(ApkDown.Action_FINISH));
 
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
