@@ -9,8 +9,8 @@
 #### 如何接入？
  gradle 接入方式
  ```java
-    compile(group: 'com.ml.apkupadte', name: 'appupdate', version: '1.0.3', ext: 'aar', classifier: '')
-    compile 'com.ml.asynchttp:asynchttp:1.0.3'
+    compile 'com.ml.apkupadte:appupdate:1.0.7@aar'
+    compile 'com.ml.asynchttp:asynchttp-android:1.1.0'
 
  
  ```
@@ -26,66 +26,96 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     
     
-        <service android:name="com.uyin.apkupdate.service.UpdateVersionService"/>
+    <service android:name="com.uyin.apkupdate.service.UpdateVersionService"/>
 
 ```
 
 
-
+####在线检测 (直接设置更新接口，以及参数)
  ```java
-    ApkUpdateCheck<ResonseEnty ,VersionBean> apkUpdateCheck=new ApkUpdateCheck(url, new AppVersionCheckCallBack<ResonseEnty,VersionBean>() {
+     ApkUpdateOnline<User> userApkUpdateOnline= new ApkUpdateOnline<User>(Activity.this, "http://120.26.106.106:8080/rest/common/user/login.do") {
                     @Override
-                    public String getTitle(VersionBean t) {
-                                        //這個是在顯示dialog的title部分
-
-                        return t.getVersionNo();
+                    public String getTitle(User user) {
+                    
+                        return user.getData().getUsername();
                     }
 
                     @Override
-                    public String getContent(VersionBean t) {
-                    //這個是在顯示dialog的cotent部分
-                        return t.getVersionName();
+                    public String getContent(User user) {
+                    //dialog显示content内容
+                        return user.getData().getUsername();
                     }
+
+                    @Override
+                    public String getDownURL(User user) {
+                    
+                        return user.getData().getAvatar();
+                    }
+
+                    @Override
+                    public boolean isMustUpdate(User user) {
+                    //是否必须更新，如果为true 关闭dialog app则会关闭
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isShowDialog(User t1) {
+                    //是否显示dialog
+                        return true;
+                    }
+
+                    @Override
+                    public String getResultDesConstants(String str) {
+                    //这个是对于网络数据加密的，如果数据没加密无需操作该方法
+                        return null;
+                    }
+                };
+                HashMap   map=new HashMap<>();
+                map.put("username","15093201628");
+                map.put("password","e565f08d058ebb4a1c99907a9860a93b");
+
+                userApkUpdateOnline.CheckByJSONPost(map);
  
+ ```
+ 
+ ####本地检测 ，需要传入一个实体类 
+ ```java
+     ApkUpdateCheck apkUpdateCheck=new ApkUpdateCheck(new AppVersionCheckCallBack<User>(){
+
                     @Override
-                    public String getDownURL(VersionBean t) {
-                        String url=UrlEncodeUtils.encodeUrl(t.getVersionUrl());
-                        Log.e("tag","url="+url);
-                        return "http://www.jiujiumiandan.cn/jiujiumiandan-user.apk";
+                    public String getTitle(User user) {
+                        return null;
                     }
 
                     @Override
-                    public boolean isMustUpdate(VersionBean t) {
-                            //表示是否必須更新 版本，如果返回true  dialog消失的話，app也會關閉
-                        return true;
+                    public String getContent(User user) {
+                        return null;
                     }
 
                     @Override
-                    public boolean isShowDialog(ResonseEnty t1) {
-                    //這個方法主要是 判斷 是否要需要更新版本，返回的boolean類型是判斷是否要顯示更新版本的dialog的
-                        return true;
+                    public String getDownURL(User user) {
+                        return user.getMsg();
                     }
 
                     @Override
-                    public String getResultDesConstants(String result) {
-                         String dasd=DesConstants.DecryptDoNet(result, DesConstants.AESKey);
-                        Log.e("tag",dasd);
-                        dasd=  "{\"Status\":1,\"ErrCode\":\"000000\",\"ErrMsg\":null,\"ResultJson\":\"{\\\"VersionId\\\":1,\\\"VersionNo\\\":\\\"2.1.1\\\",\\\"VersionName\\\":\\\"2.1.1\\\",\\\"VersionLog\\\":\\\"久久免单---用我买单，好酒免单\\\\n\\\\n【优化】我要买单的界面布局局部调整。\\\\n\\\\n我们始终致力于改善您的体验，若果您觉得我们这个版本还不错，请在应用商城给我们一个评价，我们感激不尽。\\\\n如果您有什么问题，可以直接在微信公众号：久久免单 或 APP个人中心--反馈中直接留言，我们将及时反馈您的问题。\\\",\\\"VersionUrl\\\":\\\"http://www.jiujiumiandan.cn/jiujiumiandan-user.apk\\\",\\\"MustUpdate\\\":false}\"}";
-                       
-                       //dasd這裏對應的就是  ResonseEnty  ，其中的ResultJson對應的就是 VersionBean  ,所以如果服務器返回的數據類型衹是ResultJson那在初始化的時候，直接傳入兩個相同的ApkUpdateCheck<VersionBean ,VersionBean>
-                       return dasd;
+                    public boolean isMustUpdate(User user) {
+                        return false;
                     }
 
                     @Override
-                    public   VersionBean getResultBaen(ResonseEnty  t1) {
+                    public boolean isShowDialog(User t1) {
+                        return false;
+                    }
 
-                         return new Gson().fromJson(t1.getResultJson(),VersionBean.class);
-                         //這裏是根據 ResonseEnty的返回值 初始化 VersionBean
+                    @Override
+                    public String getResultDesConstants(String str) {
+                        return null;
                     }
                 });
-                apkUpdateCheck.setActivity(MainActivity.this);
-                apkUpdateCheck.setResultBean(ResonseEnty.class);
-                apkUpdateCheck.check();
+                User user=new User();
+                user.setMsg("下载地址");
+                apkUpdateCheck.setActivity(Activity activity)
+                apkUpdateCheck.check(user);
  
  ```
  
@@ -132,7 +162,7 @@ public class DefaultDialog extends ApkUpdateDialog {
 ```
 
 
-和dialog不用的是，notification不但可以繼承ApkUpdateNotification來實現，你也可以通過實現NoticeListener來自己創建更炫的notification
+*和dialog不用的是，notification不但可以繼承ApkUpdateNotification來實現，你也可以通過實現NoticeListener來自己創建更炫的notification
 ```java
 public    class DefaultNotification extends ApkUpdateNotification {
 
@@ -178,13 +208,10 @@ public    class DefaultNotification extends ApkUpdateNotification {
 使用自定義的dialog和 Notification
 
 ```java
-
-  ApkUpdateCheck<ResonseEnty ,VersionBean> apkUpdateCheck=new ApkUpdateCheck(url, new AppVersionCheckCallBack<ResonseEnty,VersionBean>() {
-                 
-                },new DefaultDialog(MainActivity.this),new DefaultNotification(MainActivity.this.getApplcation()));
-                apkUpdateCheck.setActivity(MainActivity.this);
-                apkUpdateCheck.setResultBean(ResonseEnty.class);
-                apkUpdateCheck.check();
+ ApkUpdateCheck(AppVersionCheckCallBack appVersionCheckCallBack,ApkUpdateDialog apkUpdateDialog,NoticeListener noticeListener)
+ 
+ ApkUpdateOnline(Activity activity,String url, ApkUpdateDialog apkUpdateDialog, NoticeListener noticeListener)
+ 
 
 ```
 
