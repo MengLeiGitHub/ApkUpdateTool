@@ -191,10 +191,6 @@ public    class DefaultNotification extends ApkUpdateNotification {
         remoteView.setProgressBar(R.id.pb_progress,100,progress,false);
     }
 
-    @Override
-    public int getLogoId() {
-        return  R.drawable.ic_launcher;
-    }
 
     @Override
     protected void onFinish() {
