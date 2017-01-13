@@ -9,8 +9,8 @@
 #### 如何接入？
  gradle 接入方式
  ```java
-    compile 'com.ml.apkupadte:appupdate:1.0.7@aar'
-    compile 'com.ml.asynchttp:asynchttp-android:1.1.0'
+    compile 'com.ml.apkupadte:appupdate:1.0.8@aar'
+    compile 'com.ml.asynchttp:asynchttp-android:1.1.1'
 
  
  ```
@@ -210,7 +210,28 @@ public    class DefaultNotification extends ApkUpdateNotification {
  
 
 ```
+##android 代码混淆
 
+<pre><code>
+
+-keep class com.async.**
+-keepclassmembers class com.async.** { *; }
+-keep enum com.async.**
+-keepclassmembers enum com.async.** { *; }
+-keep interface com.async.**
+-keepclassmembers interface com.async.** { *; }
+
+ # Gson
+ -keepattributes Signature
+ -keepattributes *Annotation*
+ -keep class sun.misc.Unsafe { *; }
+ -keep class com.google.gson.stream.** { *; }
+ # 使用Gson时需要配置Gson的解析对象及变量都不混淆。不然Gson会找不到变量。
+ # 将下面替换成自己的实体类
+ -keep class com.example.bean.** { *; }	
+
+
+</code></pre>
 
 
 
